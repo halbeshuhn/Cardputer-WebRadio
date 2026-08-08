@@ -1,0 +1,13 @@
+# Arduino build output — regenerated on every compile, ~57 MB
+build/
+*.elf
+*.map
+
+# Python venv for the font generator
+venv/
+
+# macOS
+.DS_Store
+
+# HEIC originals of the screenshots — the .jpg versions are what the README uses
+*.heic

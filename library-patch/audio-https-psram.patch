@@ -1,0 +1,38 @@
+--- Audio.cpp.original	2026-08-08 18:10:15
++++ Audio.cpp.patched	2026-08-08 18:11:12
+@@ -489,6 +489,35 @@
+ 
+     if(!startsWith(h_host, "http")) { AUDIO_INFO("Hostaddress is not valid"); stopSong(); goto exit;}
+ 
++    // ### PATCH M5Cardputer WebRadio, 08.08.2026 - https ohne PSRAM abweisen
++    //
++    // Ohne PSRAM legt mbedTLS beide Datensatzpuffer in voller Groesse an: im
++    // SDK gilt CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN=16384 und
++    // CONFIG_MBEDTLS_ASYMMETRIC_CONTENT_LEN ist nicht gesetzt, macht rund
++    // 32 KB. Der Cardputer Adv hat kein PSRAM und im Betrieb 13 bis 25 KB
++    // frei. Gemessen am 8.8.2026 fiel der Heap beim Versuch auf 996 Bytes
++    // ("esp-aes: Failed to allocate memory"); in diesem Moment scheitert
++    // jede Anforderung irgendeines Tasks - auch die NVS-Lesezugriffe, mit
++    // denen die WLAN-Zugaenge geholt werden.
++    //
++    // Der Fall tritt vor allem bei UMLEITUNGEN auf: Ein Sender steht als
++    // http in der Liste und verweist beim Abspielen auf https. Serverseitig
++    // vorher filtern kann man das nicht.
++    //
++    // Diese eine Stelle genuegt: connecttohost() ist der Durchgang sowohl
++    // fuer die erste URL als auch fuer jede Umleitung, die weiter unten
++    // wieder connecttohost() aufruft. httpPrint() und httpRange() koennen
++    // danach keinen https-Host mehr bekommen.
++    //
++    // Gleiche Bauart wie der vorhandene Riegel fuer FLAC ("FLAC works only
++    // with PSRAM!"), nur eben fuer die Transportverschluesselung.
++    if(startsWith(h_host, "https") && !psramFound()) {
++        AUDIO_INFO("https needs PSRAM - refused");
++        stopSong();
++        goto exit;
++    }
++    // ### Ende des Patches
++
+     if(startsWith(h_host, "https")) {m_f_ssl = true;  hostwoext_begin = 8; port = 443;}
+     else                            {m_f_ssl = false; hostwoext_begin = 7; port = 80;}
+ 
