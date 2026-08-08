@@ -5,8 +5,8 @@ to plug into a computer to add a station.
 
 ![Cardputer WebRadio](images/radio.jpg)
 
-Based on [WuSiU's WebRadio](https://github.com/WuSiU), which is based on
-[cyberwisk/M5Cardputer_WebRadio](https://github.com/cyberwisk/M5Cardputer_WebRadio).
+Based on [WuSiU/WebRadio_WuSiU_Cardputer_Adv](https://github.com/WuSiU/WebRadio_WuSiU_Cardputer_Adv),
+which is based on [cyberwisk/M5Cardputer_WebRadio](https://github.com/cyberwisk/M5Cardputer_WebRadio).
 
 ---
 
@@ -305,7 +305,7 @@ plus the audio library's own messages.
 ## Credits
 
 - **cyberwisk** — the original [M5Cardputer_WebRadio](https://github.com/cyberwisk/M5Cardputer_WebRadio)
-- **WuSiU** — the Cardputer Adv version this one grew out of
+- **WuSiU** — [WebRadio_WuSiU_Cardputer_Adv](https://github.com/WuSiU/WebRadio_WuSiU_Cardputer_Adv), the Cardputer Adv version this one grew out of
 - **schreibfaul1** — [ESP32-audioI2S](https://github.com/schreibfaul1/ESP32-audioI2S)
 - **radio-browser.info** — the free station directory, no key, no registration
 - **Zeh Fernando** — "Nokia Cellphone FC Small", the pixel font
