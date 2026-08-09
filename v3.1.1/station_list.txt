@@ -1,0 +1,6 @@
+Radio Bob,http://streams.radiobob.de/bob-national/mp3-192/mediaplayer
+MDR Aktuell,http://mdr-284340-0.cast.mdr.de/mdr/284340/0/mp3/high/stream.mp3
+hr3,http://dispatcher.rndfnk.com/hr/hr3/live/mp3/128/stream.mp3
+Studio Brussel,http://icecast.vrtcdn.be/stubru-mid.mp3
+Nightwave Plaza,http://radio.plaza.one/mp3
+RMF FM,http://rmfstream1.interia.pl:80/rmf_fm
