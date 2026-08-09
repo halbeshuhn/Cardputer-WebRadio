@@ -18,12 +18,26 @@ python3 tools/screen_main.py --failed --vis off      # dead stream
 `--help` lists the rest: `--title`, `--wifi`, `--kbit`, `--vu`, `--scale`,
 `-o`. Python 3, no packages to install.
 
+`screen_menu.py` does the other two screens — the floating system menu, drawn
+over the radio screen exactly as it appears on the device, and the full-screen
+country list of the online search:
+
+```
+python3 tools/screen_menu.py menu   -o menu.png
+python3 tools/screen_menu.py online -o online.png --sprache DE
+```
+
+Every screenshot in the README above was produced this way.
+
 It is not a mock-up. The values come from the sketch itself:
 
 - coordinates and sizes from its `#define` lines
 - fixed labels from the `drawString()` calls that use them, and tables like
   `marksTxt[]` straight from the array
 - named constants inside a function, such as the battery's `battW`, by name
+- menu and list wording from `Lang.h`, matched by the string id in the comment
+  behind each entry, so `--sprache DE` really is the German build
+- the country names from `rbCountries[]`
 - colours resolved the way the library resolves them, then pushed through
   RGB565 like the panel does
 

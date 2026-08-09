@@ -92,11 +92,23 @@ def func_strings(name, path=SKETCH):
 
 
 def _array_body(name, path=SKETCH):
-    m = re.search(r'\b' + re.escape(name) + r'\s*\[\s*\]\s*=\s*\{([^}]*)\}',
-                  _text(path))
+    """Rumpf einer Tabelle. Klammern werden gezaehlt, damit auch Tabellen aus
+    Strukturen ganz erfasst werden und nicht nur bis zur ersten inneren."""
+    text = _text(path)
+    m = re.search(r'\b' + re.escape(name) + r'\s*\[\s*\]\s*=\s*\{', text)
     if not m:
         raise LookupError('Tabelle %s[] nicht im Sketch gefunden' % name)
-    return m.group(1)
+
+    depth = 0
+    start = m.end() - 1
+    for i in range(start, len(text)):
+        if text[i] == '{':
+            depth += 1
+        elif text[i] == '}':
+            depth -= 1
+            if depth == 0:
+                return text[start + 1:i]
+    raise LookupError('Ende der Tabelle %s[] nicht gefunden' % name)
 
 
 def array_strings(name, path=SKETCH):
@@ -168,6 +180,49 @@ def need(d, *names):
     if missing:
         raise KeyError('im Sketch nicht gefunden: %s' % ', '.join(missing))
     return [d[n] for n in names]
+
+
+LANG = os.path.join(os.path.dirname(SKETCH), 'Lang.h')
+
+
+def lang(code='EN', path=LANG):
+    """Die Texttabelle aus Lang.h als dict, etwa {'STR_MENU_EXIT': 'Exit'}.
+
+    Zugeordnet wird nicht ueber die Position, sondern ueber die Kennung, die
+    im Sketch hinter jedem Eintrag als Kommentar steht - dieselbe Regel, die
+    die Datei selbst im Kopf aufstellt.
+    """
+    with open(path, encoding='utf-8', errors='replace') as f:
+        text = f.read()
+
+    m = re.search(r'-----\s*LANG_' + code + r'\s*-+\s*\{(.*?)\n\s*\},',
+                  text, re.S)
+    if not m:
+        raise LookupError('Sprachblock LANG_%s nicht in Lang.h gefunden' % code)
+
+    out = {}
+    for line in m.group(1).splitlines():
+        e = re.search(r'"((?:[^"\\]|\\.)*)"\s*,\s*//\s*(STR_\w+)', line)
+        if e:
+            out[e.group(2)] = e.group(1)
+    if not out:
+        raise LookupError('keine Texte im Sprachblock LANG_%s' % code)
+    return out
+
+
+def struct_field(array, field=0, path=SKETCH):
+    """Eine Spalte aus einer Tabelle von Strukturen.
+
+    Aus `static const RbCountry rbCountries[] = { { "Argentina", "AR", ... },`
+    holt field=0 die Laendernamen.
+    """
+    body = _array_body(array, path)
+    out = []
+    for row in re.findall(r'\{([^{}]*)\}', body):
+        vals = re.findall(r'"((?:[^"\\]|\\.)*)"', row)
+        if len(vals) > field:
+            out.append(vals[field])
+    return out
 
 
 def expect(values, count, what):
