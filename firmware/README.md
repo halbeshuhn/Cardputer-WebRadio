@@ -5,8 +5,8 @@ Built from the source in this repository, with the
 
 | File | Size | Contents | Flash to |
 |---|---|---|---|
-| `Cardputer-WebRadio_v3.0.0.bin` | 1.7 MB | application only | SD card / M5Launcher |
-| `Cardputer-WebRadio_v3.0.0_merged.bin` | 4.2 MB | bootloader + partition table + application | address `0x0` |
+| `Cardputer-WebRadio_v3.0.1.bin` | 1.7 MB | application only | SD card / M5Launcher |
+| `Cardputer-WebRadio_v3.0.1_merged.bin` | 4.2 MB | bootloader + partition table + application | address `0x0` |
 
 ## Which one do I want?
 
@@ -28,7 +28,7 @@ source instead.
 | PSRAM | Disabled |
 
 ```
-Sketch:          1,679,047 bytes (53% of 3,145,728)
+Sketch:          1,679,215 bytes (53% of 3,145,728)
 Global variables:   74,116 bytes (22% of 327,680)
 ```
 

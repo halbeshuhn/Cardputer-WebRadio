@@ -11,3 +11,7 @@ venv/
 
 # HEIC originals of the screenshots — the .jpg versions are what the README uses
 *.heic
+
+# Python
+__pycache__/
+*.pyc

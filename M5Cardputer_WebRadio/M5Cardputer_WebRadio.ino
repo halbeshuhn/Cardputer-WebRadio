@@ -176,6 +176,37 @@
 #define HDR_RULE_Y     50   // rote Trennlinie
 
 // ---------------------------------------------------------------------------
+// Batteriesymbol oben rechts, in der Form des iPhone-Symbols: ein liegendes
+// Gehaeuse mit runden Ecken, der Pluspol als kurzer Balken rechts daneben,
+// und innen die Fuellung mit etwas Luft zum Rahmen. Gezeichnet wird
+// ausschliesslich mit Rechtecken - vier Linien und vier Eckpunkte fuer den
+// Rahmen, zwei Flaechen fuer Pluspol und Fuellung.
+//
+// Gesamtbreite = BATT_W + BATT_GAP + BATT_TIP_W. Das Symbol steht buendig
+// am rechten Rand, also UI_MARGIN vom Bildrand entfernt - derselbe Abstand,
+// mit dem die Lautstaerkeskala links beginnt.
+//
+// Hoehe nach Augenmass eingestellt, in drei Schritten: erst so hoch wie die
+// Skala (Zeilen 3..11), das wirkte zu klein; dann so, dass die Fuellung genau
+// das Band der Skala fuellt (Rahmen 1..13), das wirkte zu gross. Geblieben
+// ist die Mitte: der Rahmen steht oben und unten einen Pixel ueber die Skala
+// hinaus, Zeilen 2..12, die Fuellung liegt in 4..10.
+//
+// HDR_BATT_H muss BATT_Y + BATT_H abdecken, sonst bleiben Reste stehen.
+//
+// Die Farben kommen von der Lautstaerkeskala (UI_SCALE_ON / UI_SCALE_GRID):
+// Rahmen und Pluspol im gedaempften Ton, die Fuellung im hellen.
+// ---------------------------------------------------------------------------
+#define BATT_Y          2   // Oberkante des Gehaeuses
+#define BATT_W         22   // Breite des Gehaeuses
+#define BATT_H         11   // Hoehe des Gehaeuses
+#define BATT_R          2   // Rundung der Ecken; 1 = nur abgeschraegt
+#define BATT_PAD        2   // Luft zwischen Rahmen und Fuellung
+#define BATT_GAP        1   // Luft zwischen Gehaeuse und Pluspol
+#define BATT_TIP_W      2   // Pluspol
+#define BATT_TIP_H      5
+
+// ---------------------------------------------------------------------------
 // Systemmenue: schwebendes Fenster mitten auf der Anzeige, geoeffnet mit
 // BtnG0 (dem Knopf an der linken Gehaeuseseite). Solange es offen ist, gehen
 // alle Tasten an das Menue, gezeichnet wird sonst nichts - die Wiedergabe
@@ -455,6 +486,13 @@ enum RbPage { RB_PAGE_COUNTRY, RB_PAGE_REGION, RB_PAGE_STATIONS };
 #define VOL_ROWS         3  // Punktzeilen uebereinander
 #define VOL_BASE_Y      11  // unterste Punktzeile, buendig mit der Batterie
 #define VOL_ROW_PITCH    4  // Abstand wie beim Analyzer, Skala ist 9 px hoch
+
+// Die beiden Toene der Skala, urspruenglich aus dem Spektrumanalyzer: helles
+// kaltes Blauweiss fuer den Ausschlag, gedaempftes Blau fuer das Raster
+// dahinter. Stehen hier an einer Stelle, weil sich auch das Batteriesymbol
+// daraus bedient - wer den Ton aendert, aendert beides zugleich.
+#define UI_SCALE_ON   (M5Cardputer.Display.color565(120, 165, 210))
+#define UI_SCALE_GRID (M5Cardputer.Display.color565(45, 60, 75))
 
 // Helligkeitsstufen, die B der Reihe nach durchschaltet. Stufe 0 ist aus.
 uint8_t brightnessLevels[5] = {0, 32, 64, 128, 255};
@@ -827,7 +865,7 @@ void drawVuFrame() {
 
   M5Cardputer.Display.setFont(&fonts::Font0);
   M5Cardputer.Display.setTextColor(TFT_DARKGREY, TFT_BLACK);
-  M5Cardputer.Display.drawString("db", UI_MARGIN, VU_SCALE_Y);
+  M5Cardputer.Display.drawString("dB", UI_MARGIN, VU_SCALE_Y);
 
   // Die Marken passen zu VU_DB_FLOOR = -30. Wird der Fusspunkt geaendert,
   // wandern die LEDs, diese Zahlen aber nicht - dann hier nachziehen.
@@ -1172,35 +1210,55 @@ void updateBatteryDisplay(unsigned long updateInterval) {
   lastUpdate = millis();
 
   int batteryLevel = M5.Power.getBatteryLevel();
-  const int batteryY = 0;
 
-  uint16_t batteryColor = batteryLevel < 30 ? TFT_RED : TFT_GREEN;
-
-  const int battW = 20;
-  const int battH = 10;
-  const int tipW  = 3;
+  const uint16_t colFrame = UI_SCALE_GRID;
+  const uint16_t colFill  = UI_SCALE_ON;
 
   // Symbol buendig an den Seitenrand. Der Pluspol zaehlt zur Breite mit.
-  int battX = 240 - UI_MARGIN - tipW - battW;
+  const int battTotal = BATT_W + BATT_GAP + BATT_TIP_W;
+  const int battX = 240 - UI_MARGIN - battTotal;
+
+  M5Cardputer.Display.fillRect(battX, 0, battTotal, HDR_BATT_H, TFT_BLACK);
+
+  // Rahmen aus vier Linien. Oben und unten enden sie BATT_R vor der Ecke,
+  // links und rechts fangen sie BATT_R spaeter an - dadurch fehlen genau die
+  // vier Eckpunkte und das Gehaeuse wirkt gerundet.
+  M5Cardputer.Display.fillRect(
+    battX + BATT_R, BATT_Y, BATT_W - 2 * BATT_R, 1, colFrame);
+  M5Cardputer.Display.fillRect(
+    battX + BATT_R, BATT_Y + BATT_H - 1, BATT_W - 2 * BATT_R, 1, colFrame);
+  M5Cardputer.Display.fillRect(
+    battX, BATT_Y + BATT_R, 1, BATT_H - 2 * BATT_R, colFrame);
+  M5Cardputer.Display.fillRect(
+    battX + BATT_W - 1, BATT_Y + BATT_R, 1, BATT_H - 2 * BATT_R, colFrame);
+
+  // Ab BATT_R = 2 klafft zwischen den Linien eine Luecke. Ein Punkt diagonal
+  // in jede Ecke schliesst sie und macht aus der Schraege eine Rundung.
+  if (BATT_R > 1) {
+    const int cx = battX + BATT_W - 2;
+    const int cy = BATT_Y + BATT_H - 2;
+    M5Cardputer.Display.fillRect(battX + 1, BATT_Y + 1, 1, 1, colFrame);
+    M5Cardputer.Display.fillRect(cx,        BATT_Y + 1, 1, 1, colFrame);
+    M5Cardputer.Display.fillRect(battX + 1, cy,         1, 1, colFrame);
+    M5Cardputer.Display.fillRect(cx,        cy,         1, 1, colFrame);
+  }
+
+  // Pluspol, mittig zur Gehaeusehoehe.
+  M5Cardputer.Display.fillRect(
+    battX + BATT_W + BATT_GAP,
+    BATT_Y + (BATT_H - BATT_TIP_H) / 2,
+    BATT_TIP_W, BATT_TIP_H, colFrame);
+
+  // Fuellung. Ein Rest Ladung soll sichtbar bleiben, deshalb mindestens
+  // ein Pixel, solange der Ladestand ueber null liegt.
+  const int fillMax = BATT_W - 2 * BATT_PAD;
+  int fillW = (batteryLevel * fillMax + 50) / 100;
+  if (batteryLevel > 0 && fillW < 1) fillW = 1;
+  if (fillW > fillMax) fillW = fillMax;
 
   M5Cardputer.Display.fillRect(
-    battX - 2,
-    batteryY,
-    battW + tipW + 4,
-    HDR_BATT_H,
-    TFT_BLACK
-  );
-
-  // Gehaeuse, Pluspol, dann die Fuellung entsprechend dem Ladestand.
-  M5Cardputer.Display.fillRect(battX, batteryY + 2, battW, battH, TFT_DARKGREY);
-  M5Cardputer.Display.fillRect(battX + battW, batteryY + 4, tipW, 6, TFT_DARKGREY);
-  M5Cardputer.Display.fillRect(
-    battX + 2,
-    batteryY + 4,
-    (batteryLevel * (battW - 4)) / 100,
-    6,
-    batteryColor
-);
+    battX + BATT_PAD, BATT_Y + BATT_PAD,
+    fillW, BATT_H - 2 * BATT_PAD, colFill);
 }
 
 // Notliste aus dem Programmspeicher uebernehmen.
@@ -1455,8 +1513,8 @@ void showVolume() {
   // kaltes Blauweiss der leuchtenden Zeilen, colGrid der gedaempfte Blauton
   // seiner Randpunktreihen. Hell bekommen Ausschlag, untere Linie, Viertel-
   // marken und die beiden Raender, dunkel das Raster dahinter.
-  const uint16_t colOn   = M5Cardputer.Display.color565(120, 165, 210);
-  const uint16_t colGrid = M5Cardputer.Display.color565(45, 60, 75);
+  const uint16_t colOn   = UI_SCALE_ON;
+  const uint16_t colGrid = UI_SCALE_GRID;
 
   // Zahl der gefuellten Punktspalten: 0 bei stumm, alle bei Vollausschlag.
   const int filled = ((int)curVolume * VOL_DOTS + 127) / 255;

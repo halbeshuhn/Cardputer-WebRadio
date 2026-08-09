@@ -84,8 +84,8 @@ Two prebuilt images are in [`firmware/`](firmware/):
 
 | File | Size | Use with |
 |---|---|---|
-| `Cardputer-WebRadio_v3.0.0.bin` | 1.7 MB | SD card / M5Launcher — application only |
-| `Cardputer-WebRadio_v3.0.0_merged.bin` | 4.2 MB | M5Burner, ESP Web Flasher — complete image, write to `0x0` |
+| `Cardputer-WebRadio_v3.0.1.bin` | 1.7 MB | SD card / M5Launcher — application only |
+| `Cardputer-WebRadio_v3.0.1_merged.bin` | 4.2 MB | M5Burner, ESP Web Flasher — complete image, write to `0x0` |
 
 On first start the device scans for Wi-Fi networks and asks for a password.
 The interface starts in English; switch under **BtnG0 → Language**.
@@ -299,6 +299,13 @@ it, don't count characters.
 **Serial diagnostics** are available: set `DEBUG_SERIAL` to 1 in the sketch.
 You get free heap, minimum heap and largest contiguous block every 1500 ms,
 plus the audio library's own messages.
+
+**See the screen without flashing.** `tools/screen_main.py` renders the radio's
+main screen to a PNG on your computer, reading coordinates, labels and colours
+out of the sketch itself — so it follows your edits instead of drifting from
+them. Change a `#define`, run it, look. It turned the v3.0.1 battery symbol
+into a handful of ten-second rounds instead of a build-and-flash cycle per
+attempt. See [tools/README.md](tools/README.md).
 
 ---
 
