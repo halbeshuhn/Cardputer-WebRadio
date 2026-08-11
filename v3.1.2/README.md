@@ -265,8 +265,15 @@ playback, of which the largest contiguous block is 12 to 24 KB. That single fact
 ### https does not work
 
 Not a bug, and not fixable in the sketch: mbedTLS needs about 32 KB for its
-record buffers. The station directory is therefore queried with
-`is_https=false`, and the library patch above catches the redirect case.
+record buffers, and playback leaves 20 to 40 KB of heap altogether. The station
+directory is therefore queried with `is_https=false` — checked against more
+than 200 stations, not one came back with an https `url_resolved`.
+
+The other case is an http address that redirects to https, and up to 3.1.1 it
+took a library patch. That patch is gone with ESP8266Audio: neither the
+pre-flight header request nor the stream itself follows redirects, so no TLS
+connection is ever attempted. Such a station does not play — the stream
+monitor reports it rather than leaving the radio silent.
 
 ### AAC works — but only its base layer
 
