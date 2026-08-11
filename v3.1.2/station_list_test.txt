@@ -1,0 +1,14 @@
+64-mp3,http://livex.radiopopolare.it/radiopop
+96-mp3,http://radioweb.radiomarcabarcelona.com:9000/stream
+128-mp3,http://icecast.skyrock.net/s/natio_mp3_128k
+192-mp3,http://hd.lagrosseradio.info/lagrosseradio-reggae-192.mp3
+256-mp3,http://icstream.rds.radio/rdsrelax
+320-mp3,http://159.69.219.5:8010/mp3
+64-aac,http://astreaming.edi.ro:8000/EuropaFM_aac
+96-aac,http://stream.cdm-chillout.com:8020/stream-AAC-Chill
+128-aac,http://stream-ar.planetradio.co.uk/absolute90shigh.aac?direct=true&aw_0_1st.playerid=BMUK_Airable&aw_0_1st.skey=6778249992&aw_0_1st.bauer_loggedin=true
+192-aac,http://icecast.radiofrance.fr/francemusiqueclassiqueplus-hifi.aac
+32-aacp,http://fr2.1mix.co.uk:9000/aac
+48-aacp,http://31.192.216.8/RMFCLASSIC48
+64-aacp,http://wma01.fluidstream.net/birikina
+96-aacp,http://zuicast.digitalag.ro:9420/zu
