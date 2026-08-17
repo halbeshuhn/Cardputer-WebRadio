@@ -84,6 +84,32 @@ patches. Details and the full key map are in the
 
 ---
 
+## If a station in your list has no logo
+
+Since v3.3.0 the radio fetches a station's logo and keeps it on the card. It can
+only do that for stations it has an address for, and that address comes from the
+online directory — so a station that lives **only** in your own
+`station_list.txt` keeps the placeholder tower for good.
+
+You can give it one by hand. This runs in your browser, installs nothing, and
+uploads nothing:
+
+**[⇢ Station logo → .565](https://halbeshuhn.github.io/Cardputer-WebRadio/v3.3.0/tools/logo565.html)**
+
+[![The logo tool](v3.3.0/images/logo565.png)](https://halbeshuhn.github.io/Cardputer-WebRadio/v3.3.0/tools/logo565.html)
+
+Paste the stream URL, drop an image in, move and scale it into the square, press
+the button. The file arrives in your downloads named `A1B2C3D4.565` — copy it to
+`/logos/` on the card, and the station has its picture from the next start.
+
+Both halves are easy to get wrong by hand, so the page does them for you: the
+name is the FNV-1a hash of the stream URL, exactly as the device computes it,
+and the pixels are RGB565 little-endian at 76 × 76, 11,552 bytes. The reasoning
+and the ffmpeg command for doing it yourself are in
+[`v3.3.0/tools/`](v3.3.0/tools/README.md).
+
+---
+
 ## Honest limits
 
 No TLS — mbedTLS wants 32 KB this device does not have, so `https` addresses

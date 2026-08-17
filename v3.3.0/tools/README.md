@@ -1,6 +1,38 @@
 # Tools
 
-Two things live here. Neither is needed to build or run the radio.
+Three things live here. None of them is needed to build or run the radio.
+
+## Making a station logo
+
+**[`logo565.html`](https://halbeshuhn.github.io/Cardputer-WebRadio/v3.3.0/tools/logo565.html)**
+— open it in a browser, no install, nothing leaves your computer. It is the
+whole job in one page: paste the stream URL, drop an image in, fit it into the
+square, press the button. The file arrives in your downloads already named
+`A1B2C3D4.565`; copy it to `/logos/` on the card.
+
+[![The logo tool](../images/logo565.png)](https://halbeshuhn.github.io/Cardputer-WebRadio/v3.3.0/tools/logo565.html)
+
+Both halves of the job are places to get it wrong, which is why the page does
+them for you:
+
+- **The name** is the FNV-1a-32 hash of the stream URL in `%08X`, the same one
+  the device computes when it looks for the picture. It is hashed character by
+  character, so `http://` instead of `https://`, one more trailing slash or
+  different capitalisation give a different file — and a station that never
+  finds its logo.
+- **The bytes** are RGB565, 76 × 76, **little-endian**, 11,552 bytes exactly.
+  `pushImage()` reads its buffer as `swap565_t` (`create_pc()` in
+  `LGFXBase.hpp`, with `_swapBytes` left at `false`), and `drawRawLogo()`
+  swaps every word after reading — so in the file the low byte comes first.
+  Red is `00 F8`. Big-endian gives you red and blue the wrong way round.
+
+Doing it by hand with ffmpeg works too; `Anleitung-PNG-to-565-Logo.txt` has the
+command and the reasoning (in German).
+
+The device itself never writes `.565` — logos it fetches stay PNG or JPEG.
+Raw files are always hand-made, and they are the ones that always draw: a PNG
+needs 47,000 bytes in one piece for the decoder, which an https station does
+not leave lying around.
 
 ## Seeing the screen without the device
 

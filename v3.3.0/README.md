@@ -135,6 +135,28 @@ itself when a station has none, when the fetch fails, or when memory is too
 tight for the PNG decoder. Real station logos belong to their stations, so they
 are not shipped here — your device fetches them.
 
+### If a station in your list has no logo
+
+The radio can only fetch a logo it has an address for, and that address comes
+from the online directory. A station that exists **only** in your own
+`station_list.txt`, and that you never played from the directory, therefore
+keeps the placeholder for good.
+
+You can give it one by hand, and there is a tool for exactly that:
+**[Station logo → .565](https://halbeshuhn.github.io/Cardputer-WebRadio/v3.3.0/tools/logo565.html)**
+— it runs in the browser, installs nothing, and uploads nothing. Paste the
+stream URL, drop an image in, fit it into the square, press the button. The
+file lands in your downloads named `A1B2C3D4.565`; copy it to `/logos/` on the
+card and the station has its picture from the next start.
+
+[![The logo tool](images/logo565.png)](https://halbeshuhn.github.io/Cardputer-WebRadio/v3.3.0/tools/logo565.html)
+
+The name is the FNV-1a hash of the stream URL — the same one the device
+computes when it looks for the picture — and the bytes are RGB565 little-endian
+at 76 × 76. Both are easy to get wrong by hand; the page gets them right.
+Details, and the ffmpeg command for doing it yourself, are in
+[`tools/`](tools/README.md).
+
 ---
 
 ## Operating it

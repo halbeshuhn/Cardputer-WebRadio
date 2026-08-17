@@ -1,9 +1,36 @@
-Wenn Sie FFmpeg installiert haben, führen Sie einfach diesen Befehl im Terminal aus. Er konvertiert Ihr PNG direkt in die gewünschte Datei:
+Ein eigenes Senderlogo als .565 anlegen
+=======================================
 
-bash
-ffmpeg -i mein_bild.png -f rawvideo -pix_fmt rgb565be mein_bild.565
+Am bequemsten geht es mit logo565.html: im Browser oeffnen, Stream-Adresse
+eintragen, Bild hineinziehen, einpassen, erzeugen. Dateiname und Byte-Reihen-
+folge stimmen dann von selbst.
 
-Hinweis: Sollten die Farben auf Ihrem Display vertauscht oder fehlerhaft wirken, nutzen Sie stattdessen rgb565le (Little-Endian):
+  https://halbeshuhn.github.io/Cardputer-WebRadio/v3.3.0/tools/logo565.html
 
-bash
-ffmpeg -i mein_bild.png -f rawvideo -pix_fmt rgb565le mein_bild.565
+Mit FFmpeg von Hand geht es auch. Das Bild muss vorher auf genau 76 x 76
+Bildpunkte gebracht sein:
+
+  ffmpeg -i mein_bild.png -f rawvideo -pix_fmt rgb565le mein_bild.565
+
+Es muss **rgb565le** sein, little-endian, niederwertiges Byte zuerst. Fertig
+sind das 11.552 Byte (76 * 76 * 2) - genau die Groesse, die drawRawLogo()
+erwartet; eine andere Groesse lehnt es ab.
+
+Warum little-endian
+-------------------
+M5GFX deutet den Puffer, den pushImage() bekommt, als swap565_t - das steht in
+LGFXBase.hpp in create_pc(), und _swapBytes ist voreingestellt false. Der
+Sketch setzt es nirgends. drawRawLogo() dreht deshalb jedes Wort nach dem
+Lesen. Unterm Strich muss in der Datei das niederwertige Byte zuerst stehen:
+Rot ist 00 F8, Gruen E0 07, Blau 1F 00.
+
+Wer rgb565be nimmt, bekommt Rot und Blau vertauscht.
+
+Der Dateiname
+-------------
+FNV-1a ueber die Stream-Adresse, 32 Bit, acht Hexziffern gross geschrieben,
+Endung .565, abgelegt in /logos auf der Karte. Gehasht wird die Adresse genau
+so, wie sie in der Senderliste steht - http:// statt https://, ein
+Schraegstrich mehr am Ende oder andere Grossschreibung ergeben einen anderen
+Namen. logo565.html rechnet ihn aus; bei eingeschaltetem DEBUG_SERIAL nennt
+ihn auch das Geraet selbst in der Zeile "[logo] Schirm sucht ...".
