@@ -1,0 +1,9 @@
+Wenn Sie FFmpeg installiert haben, führen Sie einfach diesen Befehl im Terminal aus. Er konvertiert Ihr PNG direkt in die gewünschte Datei:
+
+bash
+ffmpeg -i mein_bild.png -f rawvideo -pix_fmt rgb565be mein_bild.565
+
+Hinweis: Sollten die Farben auf Ihrem Display vertauscht oder fehlerhaft wirken, nutzen Sie stattdessen rgb565le (Little-Endian):
+
+bash
+ffmpeg -i mein_bild.png -f rawvideo -pix_fmt rgb565le mein_bild.565
