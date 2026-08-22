@@ -1,0 +1,138 @@
+/*
+    AudioFileSourceHTTPStream
+    Connect to a HTTP based streaming service
+
+    Copyright (C) 2017  Earle F. Philhower, III
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#pragma once
+
+#include <Arduino.h>
+#ifdef ESP8266
+#include <ESP8266HTTPClient.h>
+#else
+#include <HTTPClient.h>
+#endif
+#include "AudioFileSource.h"
+
+// ---------------------------------------------------------------------------
+// Patch fuer echtes https, 19.8.2026 (Cardputer-WebRadio).
+//
+// Original: open() ruft http.begin(client, url) mit einem einfachen
+// NetworkClient. Der spricht kein TLS, also scheitert jede https-Adresse
+// schon am Verbindungsaufbau - deshalb hat das Radio bis heute jede
+// https-Adresse vorher auf http heruntergeschrieben.
+//
+// Jetzt: bei einer https-Adresse legt clientForUrl() einen
+// NetworkClientSecure an und behaelt ihn. Behalten ist noetig, weil der
+// eingebaute Wiederverbinder open(saveURL) erneut aufruft. Bei http bleibt
+// alles wie vorher - kein TLS, keine Kosten.
+//
+// Freigegeben wird er in freeSecure(), und zwar IMMER erst nach http.end():
+// HTTPClient haelt bis dahin einen Zeiger auf ihn.
+// ---------------------------------------------------------------------------
+#ifndef ESP8266
+#include <strings.h>
+#if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
+#include <NetworkClientSecure.h>
+#define AFS_SECURE_CLIENT NetworkClientSecure
+#else
+#include <WiFiClientSecure.h>
+#define AFS_SECURE_CLIENT WiFiClientSecure
+#endif
+#endif
+
+class AudioFileSourceHTTPStream : public AudioFileSource {
+    friend class AudioFileSourceICYStream;
+
+public:
+    AudioFileSourceHTTPStream();
+    AudioFileSourceHTTPStream(const char *url);
+    virtual ~AudioFileSourceHTTPStream() override;
+
+    virtual bool open(const char *url) override;
+    virtual uint32_t read(void *data, uint32_t len) override;
+    virtual uint32_t readNonBlock(void *data, uint32_t len) override;
+    virtual bool seek(int32_t pos, int dir) override;
+    virtual bool close() override;
+    virtual bool isOpen() override;
+    virtual uint32_t getSize() override;
+    virtual uint32_t getPos() override;
+    bool SetReconnect(int tries, int delayms) {
+        reconnectTries = tries;
+        reconnectDelayMs = delayms;
+        return true;
+    }
+    void useHTTP10() {
+        http.useHTTP10(true);
+    }
+
+    enum { STATUS_HTTPFAIL = 2, STATUS_DISCONNECTED, STATUS_RECONNECTING, STATUS_RECONNECTED, STATUS_NODATA };
+
+private:
+    virtual uint32_t readInternal(void *data, uint32_t len, bool nonBlock);
+#if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
+    NetworkClient client;
+#else
+    WiFiClient client;
+#endif
+    HTTPClient http;
+
+#ifdef ESP8266
+    WiFiClient &clientForUrl(const char *) {
+        return client;
+    }
+    void freeSecure() {}
+#else
+    // Lebt vom ersten https-open() bis freeSecure(). nullptr heisst: bisher
+    // nur http gesehen, also nie TLS bezahlt.
+    AFS_SECURE_CLIENT *secure;
+
+    // setInsecure(): kein Zertifikatsspeicher. Das Geraet hat weder eine Uhr,
+    // die es ohne Netz stellen koennte, noch ein Wurzelzertifikat-Buendel im
+    // Flash - eine Pruefung waere hier Theater, keine Sicherheit.
+    NetworkClient &clientForUrl(const char *url) {
+        if (!url || strncasecmp(url, "https://", 8) != 0) return client;
+        if (!secure) {
+            secure = new AFS_SECURE_CLIENT();
+            // Kein Speicher: dann mit dem einfachen Client weiter, damit
+            // http.begin() ehrlich scheitert statt hier abzustuerzen.
+            if (!secure) return client;
+            secure->setInsecure();
+            // Voreingestellt sind 120 Sekunden. Ein Server, der die
+            // Verbindung annimmt und dann schweigt, haette das Radio damit
+            // zwei Minuten lang eingefroren - loop() kommt waehrend des
+            // Handschlags nicht zurueck. 10 Sekunden sind reichlich: der
+            // laengste gemessene Handschlag lag bei unter einer.
+            secure->setHandshakeTimeout(10);
+        }
+        return *secure;
+    }
+    void freeSecure() {
+        if (secure) {
+            secure->stop();
+            delete secure;
+            secure = nullptr;
+        }
+    }
+#endif
+
+    int pos;
+    int size;
+    int reconnectTries;
+    int reconnectDelayMs;
+    char saveURL[256];   // war 128, siehe LIESMICH.md
+};

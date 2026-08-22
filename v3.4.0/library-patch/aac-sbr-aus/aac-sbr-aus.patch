@@ -1,0 +1,37 @@
+--- aacdec.h.original	2026-08-15 00:00:18
++++ aacdec.h.patched	2026-08-15 00:00:18
+@@ -103,7 +103,7 @@
+ 
+ /* define these to enable decoder features */
+ #if defined(HELIX_FEATURE_AUDIO_CODEC_AAC_SBR)
+-#define AAC_ENABLE_SBR
++/* SBR aus - Messung 14.8.2026: spart PSInfoSBR (50.788 B) und sbrWorkBuf (8.192 B) */
+ #endif //  HELIX_FEATURE_AUDIO_CODEC_AAC_SBR.
+ #define AAC_ENABLE_MPEG4
+ 
+--- aaccommon.h.original	2026-08-15 00:00:18
++++ aaccommon.h.patched	2026-08-15 00:00:18
+@@ -51,7 +51,7 @@
+ 
+ // Can't fit in ESP8266 RAM
+ #ifndef ESP8266
+-#define AAC_ENABLE_SBR 1
++/* SBR aus - siehe aacdec.h */
+ #endif
+ 
+ #pragma GCC optimize ("O3")
+--- AudioGeneratorAAC.h.original	2026-08-15 00:00:18
++++ AudioGeneratorAAC.h.patched	2026-08-15 00:00:18
+@@ -51,6 +51,12 @@
+     // Output buffering
+ #ifdef ESP8266
+     const int outSampleLen = 1024 * 2;  // SBR disabled
++#elif !defined(AAC_ENABLE_SBR)
++    // Ohne SBR liefert der Decoder hoechstens 1024 Abtastwerte je Kanal.
++    // Bis zum 14.8.2026 hing diese Wahl allein an ESP8266, nicht am SBR-
++    // Schalter - auf dem ESP32 wurden also 8.192 Bytes belegt, auch wenn
++    // SBR gar nicht uebersetzt war.
++    const int outSampleLen = 1024 * 2;
+ #else
+     const int outSampleLen = 2048 * 2;  // SBR enabled
+ #endif

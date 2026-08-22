@@ -1,0 +1,25 @@
+--- Webradio_Cardputer_git/v3.4.0/library-patch/i2s-stille/AudioOutputI2S.cpp.original	2026-08-22 12:43:37
++++ Webradio_Cardputer_git/v3.4.0/library-patch/i2s-stille/AudioOutputI2S.cpp.patched	2026-08-22 12:43:37
+@@ -165,6 +165,22 @@
+     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
+     chan_cfg.dma_desc_num = _buffers;
+     chan_cfg.dma_frame_num = _bufferWords;
++
++    // Stille statt Wiederholung, wenn der Nachschub ausbleibt.
++    //
++    // I2S_CHANNEL_DEFAULT_CONFIG laesst auto_clear auf false. Der DMA sendet
++    // dann den zuletzt geschriebenen Puffer erneut, solange niemand nachlegt -
++    // bei 5 Puffern zu 2.304 Bytes sind das 26 ms Ton in Endlosschleife. Das
++    // ist das Rasseln, das man bei jeder Funkdelle hoert.
++    //
++    // Mit auto_clear nullt die ISR den Puffer, sobald er gesendet ist
++    // (esp_driver_i2s/i2s_common.c, i2s_dma_tx_callback: memset(curr_buf, 0,
++    // buf_size) hinter auto_clear_after_cb). Kommt nichts nach, laeuft Stille
++    // aus dem Ausgang. Kosten: 77 memset zu 2.304 Bytes je Sekunde.
++    //
++    // auto_clear ist in der IDF ein Alias von auto_clear_after_cb; der
++    // Kurzname gilt auch in aelteren Fassungen.
++    chan_cfg.auto_clear = true;
+     assert(ESP_OK == i2s_new_channel(&chan_cfg, &_tx_handle, nullptr));
+ 
+     i2s_std_config_t std_cfg = {

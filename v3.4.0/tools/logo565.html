@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Senderlogo &rarr; .565</title>
+<style>
+  :root{
+    --bg:#14161a; --fl:#1c2027; --li:#262c35; --tx:#e6e8ec; --dm:#9aa3af;
+    --ak:#7fb2ff; --gr:#7fd4a0; --rt:#ff8a8a; --ra:#39404b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:18px;background:var(--bg);color:var(--tx);
+       font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  .kopf{display:flex;align-items:baseline;gap:10px;margin:0 0 14px}
+  h1{font-size:17px;margin:0;font-weight:600}
+  h1 small{font-weight:400;color:var(--dm);font-size:13px;margin-left:8px}
+  .sprache{margin-left:auto;display:flex;gap:4px;flex:none}
+  .sprache button{padding:4px 10px;font-size:12px}
+  .sprache button.an{background:var(--ak);color:#0b1220;border-color:var(--ak);font-weight:600}
+  .karte{background:var(--fl);border:1px solid var(--ra);border-radius:8px;padding:14px;margin-bottom:14px}
+  label{display:block;font-size:12px;color:var(--dm);margin-bottom:5px}
+  input[type=text],input[type=url]{width:100%;padding:8px 10px;background:var(--li);color:var(--tx);
+       border:1px solid var(--ra);border-radius:6px;font:13px ui-monospace,Menlo,Consolas,monospace}
+  input:focus{outline:none;border-color:var(--ak)}
+  button{padding:7px 12px;background:var(--li);color:var(--tx);border:1px solid var(--ra);
+       border-radius:6px;font-size:13px;cursor:pointer}
+  button:hover:not(:disabled){border-color:var(--ak)}
+  button:disabled{opacity:.4;cursor:default}
+  button.haupt{background:var(--ak);color:#0b1220;border-color:var(--ak);font-weight:600}
+  .reihe{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .ergebnis{margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .pfad{font:15px ui-monospace,Menlo,Consolas,monospace;color:var(--gr);
+        background:var(--li);padding:6px 10px;border-radius:6px;border:1px solid var(--ra)}
+  .arbeit{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+  #buehne{border:1px solid var(--ra);border-radius:6px;touch-action:none;cursor:grab;display:block}
+  #buehne.zieht{cursor:grabbing}
+  .regler{display:flex;flex-direction:column;gap:10px;min-width:230px}
+  .regler .zeile{display:flex;align-items:center;gap:8px}
+  .regler .zeile span{font-size:12px;color:var(--dm);width:58px;flex:none}
+  input[type=range]{flex:1;accent-color:var(--ak)}
+  .vorschau{display:flex;gap:12px;align-items:flex-end}
+  .vorschau figure{margin:0;text-align:center}
+  .vorschau figcaption{font-size:11px;color:var(--dm);margin-top:4px}
+  canvas.pix{image-rendering:pixelated;border:1px solid var(--ra);background:#000;display:block}
+  .hinweis{font-size:12px;color:var(--dm);margin-top:8px}
+  .fehler{color:var(--rt)}
+  .ok{color:var(--gr)}
+  .ablage{border:1px dashed var(--ra);border-radius:6px;padding:10px;text-align:center;
+          font-size:12px;color:var(--dm)}
+  .ablage.drueber{border-color:var(--ak);color:var(--ak)}
+  select{padding:6px 8px;background:var(--li);color:var(--tx);border:1px solid var(--ra);border-radius:6px;font-size:13px}
+  .farbfeld{width:26px;height:26px;padding:0;border:1px solid var(--ra);border-radius:6px;background:none}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace}
+</style>
+</head>
+<body>
+
+<div class="kopf">
+  <h1><span data-i="titel"></span> <small data-i="untertitel"></small></h1>
+  <div class="sprache">
+    <button id="de">DE</button><button id="en">EN</button>
+  </div>
+</div>
+
+<div class="karte">
+  <label for="url" data-i="urlLabel"></label>
+  <input type="text" id="url" spellcheck="false" autocomplete="off"
+         placeholder="http://server.example/stream.mp3">
+  <div class="ergebnis">
+    <span class="pfad" id="pfad">/logos/________.565</span>
+    <button id="kopieren" data-i="kopieren"></button>
+    <span class="hinweis" id="hashinfo"></span>
+  </div>
+  <div class="hinweis" data-i="hinweisUrl"></div>
+</div>
+
+<div class="karte">
+  <div class="reihe">
+    <button id="dateiknopf" data-i="dateiknopf"></button>
+    <span class="hinweis" data-i="oderLogo"></span>
+    <input type="file" id="datei" accept="image/*" hidden>
+    <input type="url" id="logourl" spellcheck="false" autocomplete="off" style="flex:1;min-width:220px"
+           placeholder="https://server.example/favicon.png">
+    <button id="holen" data-i="laden"></button>
+  </div>
+  <div class="ablage" id="ablage" data-i="ablage" style="margin-top:10px"></div>
+  <div class="hinweis" id="ladeinfo"></div>
+</div>
+
+<div class="karte">
+  <div class="arbeit">
+    <canvas id="buehne" width="420" height="340"></canvas>
+
+    <div class="regler">
+      <div class="zeile"><span data-i="groesse"></span>
+        <input type="range" id="zoom" min="-400" max="300" value="0"></div>
+      <div class="zeile"><span data-i="drehung"></span>
+        <input type="range" id="dreh" min="-180" max="180" value="0"></div>
+      <div class="reihe">
+        <button id="einpassen" data-i="einpassen"></button>
+        <button id="fuellen" data-i="fuellen"></button>
+        <button id="links">&#8630; 90&deg;</button>
+        <button id="rechts">90&deg; &#8631;</button>
+      </div>
+      <div class="reihe">
+        <span class="hinweis" data-i="grundLabel"></span>
+        <input type="color" id="grund" class="farbfeld" value="#000000">
+      </div>
+      <div class="reihe">
+        <span class="hinweis" data-i="folgeLabel"></span>
+        <select id="folge">
+          <option value="le" selected data-i="folgeLe"></option>
+          <option value="be" data-i="folgeBe"></option>
+        </select>
+      </div>
+
+      <div class="vorschau">
+        <figure><canvas id="v1" class="pix" width="76" height="76"></canvas>
+          <figcaption data-i="vorschau1"></figcaption></figure>
+        <figure><canvas id="v2" class="pix" width="76" height="76"
+                        style="width:152px;height:152px"></canvas>
+          <figcaption data-i="vorschau2"></figcaption></figure>
+      </div>
+
+      <div class="reihe" style="margin-top:4px">
+        <button class="haupt" id="erzeugen" disabled data-i="erzeugen"></button>
+      </div>
+      <div class="hinweis" id="status"></div>
+    </div>
+  </div>
+  <div class="hinweis" data-i="bedienhinweis"></div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // --- Wortlaute -----------------------------------------------------------
+  const TX = {
+    de: {
+      seite: "Senderlogo &rarr; .565",
+      titel: "Senderlogo &rarr; .565",
+      untertitel: "76&times;76, RGB565 little-endian, Dateiname aus dem FNV-1a der Stream-Adresse",
+      urlLabel: "Stream-Adresse des Senders (genau so, wie sie in der Senderliste steht)",
+      kopieren: "Dateinamen kopieren",
+      kopiert: "kopiert",
+      hashinfo: (h, n) => "Hash " + h + " aus " + n + " Byte",
+      hinweisUrl: "Gehasht wird die Adresse Zeichen f&uuml;r Zeichen: <code>http://</code> statt " +
+                  "<code>https://</code>, ein Schr&auml;gstrich mehr am Ende oder andere " +
+                  "Gro&szlig;schreibung ergeben einen anderen Namen.",
+      dateiknopf: "Bilddatei w&auml;hlen&hellip;",
+      oderLogo: "oder Logo-Adresse:",
+      laden: "Laden",
+      ablage: "Bild hierher ziehen oder mit &#8984;V einf&uuml;gen",
+      groesse: "Gr&ouml;&szlig;e",
+      drehung: "Drehung",
+      einpassen: "Einpassen",
+      fuellen: "F&uuml;llen",
+      grundLabel: "Grund&nbsp;(f&uuml;r durchsichtige Stellen)",
+      folgeLabel: "Bytefolge",
+      folgeLe: "little-endian (rgb565le) — für den Cardputer",
+      folgeBe: "big-endian (rgb565be) — nur als Ausweg",
+      vorschau1: "1:1 (so am Ger&auml;t)",
+      vorschau2: "2&times;",
+      erzeugen: ".565 erzeugen und herunterladen",
+      statusStart: "11552&nbsp;Byte &ndash; genau die Gr&ouml;&szlig;e, die <code>drawRawLogo()</code> erwartet.",
+      bedienhinweis: "Ziehen verschiebt das Bild, Mausrad &auml;ndert die Gr&ouml;&szlig;e, Pfeiltasten " +
+                     "r&uuml;cken um einen Bildpunkt. Was im hellen Quadrat steht, kommt auf die Karte.",
+      bildInfo: (q, w, h) => q + " &ndash; " + w + "&times;" + h,
+      hole: "hole …",
+      keinBild: "Kein lesbares Bild.",
+      leseFehler: "Das Bild lie&szlig; sich nicht lesen.",
+      corsFehler: m => "Direkt laden ging nicht (" + m + "). Der Server erlaubt kein CORS: " +
+                       "Bild bitte im Browser &ouml;ffnen, sichern und hier als Datei w&auml;hlen.",
+      fremdFehler: "Das Bild stammt von einem fremden Server und darf nicht ausgelesen werden. " +
+                   "Bitte als Datei laden.",
+      fertig: (n, b) => n + " geschrieben, " + b + "&nbsp;Byte. Auf die SD-Karte nach <code>/logos/</code> kopieren."
+    },
+    en: {
+      seite: "Station logo &rarr; .565",
+      titel: "Station logo &rarr; .565",
+      untertitel: "76&times;76, RGB565 little-endian, filename from the FNV-1a of the stream URL",
+      urlLabel: "Stream URL of the station (exactly as it stands in your station list)",
+      kopieren: "Copy filename",
+      kopiert: "copied",
+      hashinfo: (h, n) => "hash " + h + " over " + n + " bytes",
+      hinweisUrl: "The URL is hashed character by character: <code>http://</code> instead of " +
+                  "<code>https://</code>, one more trailing slash or different capitalisation " +
+                  "give a different name.",
+      dateiknopf: "Choose image file&hellip;",
+      oderLogo: "or logo URL:",
+      laden: "Load",
+      ablage: "Drop an image here, or paste it with &#8984;V / Ctrl+V",
+      groesse: "Size",
+      drehung: "Rotation",
+      einpassen: "Fit",
+      fuellen: "Fill",
+      grundLabel: "Backdrop&nbsp;(for transparent areas)",
+      folgeLabel: "Byte order",
+      folgeLe: "little-endian (rgb565le) — for the Cardputer",
+      folgeBe: "big-endian (rgb565be) — fallback only",
+      vorschau1: "1:1 (as on the device)",
+      vorschau2: "2&times;",
+      erzeugen: "Build .565 and download",
+      statusStart: "11552&nbsp;bytes &ndash; exactly the size <code>drawRawLogo()</code> expects.",
+      bedienhinweis: "Drag to move the image, the wheel resizes it, arrow keys nudge by one pixel. " +
+                     "Whatever sits inside the bright square is what lands on the card.",
+      bildInfo: (q, w, h) => q + " &ndash; " + w + "&times;" + h,
+      hole: "fetching …",
+      keinBild: "Not a readable image.",
+      leseFehler: "The image could not be read.",
+      corsFehler: m => "Loading it directly failed (" + m + "). The server does not allow CORS: " +
+                       "open the image in your browser, save it, and choose it as a file here.",
+      fremdFehler: "This image comes from another server and may not be read back. " +
+                   "Please load it as a file.",
+      fertig: (n, b) => n + " written, " + b + "&nbsp;bytes. Copy it to <code>/logos/</code> on the SD card."
+    }
+  };
+
+  let L = TX.de;
+
+  function spracheSetzen(code) {
+    L = TX[code] || TX.de;
+    document.documentElement.lang = code;
+    document.title = L.seite.replace(/&rarr;/g, "→");
+    document.querySelectorAll("[data-i]").forEach(el => {
+      const t = L[el.dataset.i];
+      if (typeof t === "string") el.innerHTML = t;
+    });
+    document.getElementById("de").classList.toggle("an", code === "de");
+    document.getElementById("en").classList.toggle("an", code === "en");
+    try { localStorage.setItem("logo565-sprache", code); } catch (e) {}
+    nameAktualisieren();
+    statusZuruecksetzen();
+    if (bild) $("ladeinfo").innerHTML = '<span class="ok">' + L.bildInfo(letzteQuelle, bw, bh) + "</span>";
+  }
+  const $ = id => document.getElementById(id);
+  function statusZuruecksetzen() { $("status").innerHTML = L.statusStart; }
+
+  // --- FNV-1a, 32 Bit - Zeile fuer Zeile dasselbe wie logoHash() in der .ino ---
+  const kodierer = new TextEncoder();
+  function fnv1a(s) {
+    let h = 2166136261 >>> 0;
+    for (const b of kodierer.encode(s)) {
+      h = (h ^ b) >>> 0;
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h >>> 0;
+  }
+  const hex8 = h => h.toString(16).toUpperCase().padStart(8, "0");
+
+  const urlEin = $("url");
+
+  function nameAktualisieren() {
+    const u = urlEin.value.trim();
+    if (!u) {
+      $("pfad").textContent = "/logos/________.565";
+      $("hashinfo").textContent = "";
+    } else {
+      const h = fnv1a(u);
+      $("pfad").textContent = "/logos/" + hex8(h) + ".565";
+      $("hashinfo").textContent = L.hashinfo(h, kodierer.encode(u).length);
+    }
+    knopfPruefen();
+  }
+  urlEin.addEventListener("input", nameAktualisieren);
+
+  $("kopieren").addEventListener("click", async () => {
+    const u = urlEin.value.trim();
+    if (!u) return;
+    try {
+      await navigator.clipboard.writeText(hex8(fnv1a(u)) + ".565");
+      $("kopieren").innerHTML = L.kopiert;
+      setTimeout(() => $("kopieren").innerHTML = L.kopieren, 1200);
+    } catch (e) { /* ohne Zwischenablage steht der Name ja daneben */ }
+  });
+
+  // --- Buehne und Zustand ---------------------------------------------------
+  const ZIEL = 76;                 // Bildpunkte auf dem Geraet
+  const AUS  = 228;                // Ausschneidequadrat auf der Buehne (3x)
+  const buehne = $("buehne"), bctx = buehne.getContext("2d");
+  const ausX = (buehne.width  - AUS) / 2;
+  const ausY = (buehne.height - AUS) / 2;
+
+  let bild = null, letzteQuelle = "";
+  let bw = 0, bh = 0;
+  let mx = buehne.width / 2, my = buehne.height / 2;
+  let skal = 1, winkel = 0;
+
+  const zoomRegler = $("zoom"), drehRegler = $("dreh"), grundFeld = $("grund");
+  const reglerZuSkal = v => Math.pow(2, v / 100);
+  const skalZuRegler = s => Math.max(-400, Math.min(300, Math.round(Math.log2(s) * 100)));
+
+  function skalSetzen(s) {
+    skal = Math.max(0.02, Math.min(16, s));
+    zoomRegler.value = skalZuRegler(skal);
+  }
+
+  // Vor dem Verkleinern stufenweise halbieren - Canvas interpoliert sonst grob.
+  function quelleFuer(nettoSkal) {
+    if (!bild || nettoSkal >= 0.5) return bild;
+    let q = bild, qw = bw, qh = bh, f = nettoSkal;
+    while (f < 0.5 && qw > 2 && qh > 2) {
+      const nw = Math.max(1, Math.round(qw / 2)), nh = Math.max(1, Math.round(qh / 2));
+      const c = document.createElement("canvas");
+      c.width = nw; c.height = nh;
+      const g = c.getContext("2d");
+      g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
+      g.drawImage(q, 0, 0, nw, nh);
+      q = c; qw = nw; qh = nh; f *= 2;
+    }
+    return q;
+  }
+
+  function bildZeichnen(ctx, k, ox, oy) {
+    if (!bild) return;
+    const netto = skal * k;
+    const q = quelleFuer(netto);
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.translate((mx - ox) * k, (my - oy) * k);
+    ctx.rotate(winkel);
+    ctx.scale(netto, netto);
+    ctx.drawImage(q, -bw / 2, -bh / 2, bw, bh);
+    ctx.restore();
+  }
+
+  function buehneZeichnen() {
+    bctx.setTransform(1, 0, 0, 1, 0, 0);
+    bctx.fillStyle = "#0e1013";
+    bctx.fillRect(0, 0, buehne.width, buehne.height);
+
+    bctx.fillStyle = grundFeld.value;
+    bctx.fillRect(ausX, ausY, AUS, AUS);
+
+    bildZeichnen(bctx, 1, 0, 0);
+
+    bctx.fillStyle = "rgba(10,12,15,.72)";
+    bctx.fillRect(0, 0, buehne.width, ausY);
+    bctx.fillRect(0, ausY + AUS, buehne.width, buehne.height - ausY - AUS);
+    bctx.fillRect(0, ausY, ausX, AUS);
+    bctx.fillRect(ausX + AUS, ausY, buehne.width - ausX - AUS, AUS);
+
+    bctx.strokeStyle = "#7fb2ff";
+    bctx.lineWidth = 1;
+    bctx.strokeRect(ausX + .5, ausY + .5, AUS - 1, AUS - 1);
+    bctx.strokeStyle = "rgba(127,178,255,.28)";
+    bctx.beginPath();
+    for (let i = 1; i < 3; i++) {
+      bctx.moveTo(ausX + AUS * i / 3, ausY); bctx.lineTo(ausX + AUS * i / 3, ausY + AUS);
+      bctx.moveTo(ausX, ausY + AUS * i / 3); bctx.lineTo(ausX + AUS, ausY + AUS * i / 3);
+    }
+    bctx.stroke();
+
+    vorschauZeichnen();
+  }
+
+  function ausschnittZeichnen(ctx) {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = grundFeld.value;
+    ctx.fillRect(0, 0, ZIEL, ZIEL);
+    bildZeichnen(ctx, ZIEL / AUS, ausX, ausY);
+  }
+
+  const v1 = $("v1").getContext("2d"), v2 = $("v2").getContext("2d");
+  function vorschauZeichnen() {
+    ausschnittZeichnen(v1);
+    v2.setTransform(1, 0, 0, 1, 0, 0);
+    v2.clearRect(0, 0, ZIEL, ZIEL);
+    v2.drawImage(v1.canvas, 0, 0);
+  }
+
+  // --- Bild annehmen --------------------------------------------------------
+  function bildUebernehmen(el, quelle) {
+    bild = el;
+    bw = el.naturalWidth || el.width;
+    bh = el.naturalHeight || el.height;
+    letzteQuelle = quelle;
+    mx = buehne.width / 2; my = buehne.height / 2;
+    winkel = 0; drehRegler.value = 0;
+    einpassen(false);
+    $("ladeinfo").innerHTML = '<span class="ok">' + L.bildInfo(quelle, bw, bh) + "</span>";
+    knopfPruefen();
+  }
+
+  function einpassen(fuellen) {
+    if (!bild) return;
+    const f = fuellen ? Math.max(AUS / bw, AUS / bh) : Math.min(AUS / bw, AUS / bh);
+    skalSetzen(f);
+    mx = buehne.width / 2; my = buehne.height / 2;
+    buehneZeichnen();
+  }
+
+  function ausDatei(f) {
+    if (!f) return;
+    const leser = new FileReader();
+    leser.onload = () => {
+      const im = new Image();
+      im.onload = () => bildUebernehmen(im, f.name || "Bild");
+      im.onerror = () => $("ladeinfo").innerHTML = '<span class="fehler">' + L.leseFehler + "</span>";
+      im.src = leser.result;
+    };
+    leser.readAsDataURL(f);
+  }
+
+  $("dateiknopf").addEventListener("click", () => $("datei").click());
+  $("datei").addEventListener("change", e => ausDatei(e.target.files[0]));
+
+  const ablage = $("ablage");
+  ["dragenter", "dragover"].forEach(t => ablage.addEventListener(t, e => {
+    e.preventDefault(); ablage.classList.add("drueber");
+  }));
+  ["dragleave", "drop"].forEach(t => ablage.addEventListener(t, e => {
+    e.preventDefault(); ablage.classList.remove("drueber");
+  }));
+  ablage.addEventListener("drop", e => {
+    const f = e.dataTransfer.files[0];
+    if (f) ausDatei(f);
+  });
+  document.addEventListener("paste", e => {
+    for (const it of e.clipboardData.items) {
+      if (it.type.startsWith("image/")) { ausDatei(it.getAsFile()); break; }
+    }
+  });
+
+  $("holen").addEventListener("click", async () => {
+    const u = $("logourl").value.trim();
+    if (!u) return;
+    $("ladeinfo").textContent = L.hole;
+    try {
+      const a = await fetch(u, { mode: "cors" });
+      if (!a.ok) throw new Error("HTTP " + a.status);
+      const b = await a.blob();
+      const im = new Image();
+      im.onload = () => { bildUebernehmen(im, u.split("/").pop() || "URL"); URL.revokeObjectURL(im.src); };
+      im.onerror = () => $("ladeinfo").innerHTML = '<span class="fehler">' + L.keinBild + "</span>";
+      im.src = URL.createObjectURL(b);
+    } catch (e) {
+      $("ladeinfo").innerHTML = '<span class="fehler">' + L.corsFehler(e.message) + "</span>";
+    }
+  });
+
+  // --- Verschieben, Zoomen, Drehen -----------------------------------------
+  let zieht = false, zx = 0, zy = 0;
+  buehne.addEventListener("pointerdown", e => {
+    if (!bild) return;
+    zieht = true; zx = e.offsetX; zy = e.offsetY;
+    buehne.classList.add("zieht");
+    buehne.setPointerCapture(e.pointerId);
+  });
+  buehne.addEventListener("pointermove", e => {
+    if (!zieht) return;
+    mx += e.offsetX - zx; my += e.offsetY - zy;
+    zx = e.offsetX; zy = e.offsetY;
+    buehneZeichnen();
+  });
+  ["pointerup", "pointercancel"].forEach(t => buehne.addEventListener(t, () => {
+    zieht = false; buehne.classList.remove("zieht");
+  }));
+
+  buehne.addEventListener("wheel", e => {
+    if (!bild) return;
+    e.preventDefault();
+    const alt = skal;
+    skalSetzen(skal * Math.pow(2, -e.deltaY / 400));
+    const f = skal / alt;
+    mx = e.offsetX + (mx - e.offsetX) * f;
+    my = e.offsetY + (my - e.offsetY) * f;
+    buehneZeichnen();
+  }, { passive: false });
+
+  zoomRegler.addEventListener("input", () => {
+    if (!bild) return;
+    const alt = skal;
+    skalSetzen(reglerZuSkal(+zoomRegler.value));
+    const f = skal / alt, zx0 = ausX + AUS / 2, zy0 = ausY + AUS / 2;
+    mx = zx0 + (mx - zx0) * f; my = zy0 + (my - zy0) * f;
+    buehneZeichnen();
+  });
+  drehRegler.addEventListener("input", () => {
+    winkel = (+drehRegler.value) * Math.PI / 180;
+    buehneZeichnen();
+  });
+  function drehen(grad) {
+    let g = Math.round((+drehRegler.value + grad) / 90) * 90;
+    while (g > 180) g -= 360;
+    while (g < -180) g += 360;
+    drehRegler.value = g;
+    winkel = g * Math.PI / 180;
+    buehneZeichnen();
+  }
+  $("links").addEventListener("click", () => drehen(-90));
+  $("rechts").addEventListener("click", () => drehen(90));
+  $("einpassen").addEventListener("click", () => einpassen(false));
+  $("fuellen").addEventListener("click", () => einpassen(true));
+  grundFeld.addEventListener("input", buehneZeichnen);
+
+  document.addEventListener("keydown", e => {
+    if (!bild || e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+    const s = e.shiftKey ? 10 : 1;
+    if (e.key === "ArrowLeft")       mx -= s;
+    else if (e.key === "ArrowRight") mx += s;
+    else if (e.key === "ArrowUp")    my -= s;
+    else if (e.key === "ArrowDown")  my += s;
+    else return;
+    e.preventDefault();
+    buehneZeichnen();
+  });
+
+  // --- Erzeugen -------------------------------------------------------------
+  function knopfPruefen() {
+    $("erzeugen").disabled = !(bild && urlEin.value.trim());
+  }
+
+  $("erzeugen").addEventListener("click", () => {
+    const u = urlEin.value.trim();
+    if (!bild || !u) return;
+
+    const c = document.createElement("canvas");
+    c.width = ZIEL; c.height = ZIEL;
+    const g = c.getContext("2d");
+    ausschnittZeichnen(g);
+
+    let bd;
+    try {
+      bd = g.getImageData(0, 0, ZIEL, ZIEL).data;
+    } catch (err) {
+      $("status").innerHTML = '<span class="fehler">' + L.fremdFehler + "</span>";
+      return;
+    }
+
+    // RGB565: 5 Bit rot, 6 gruen, 5 blau. Durchsichtigkeit gibt es nicht -
+    // die steckt schon im Grund, auf den gezeichnet wurde.
+    //
+    // Little-endian, niederwertiges Byte zuerst: M5GFX deutet den Puffer von
+    // pushImage() als swap565_t (LGFXBase.hpp, create_pc mit _swapBytes=false),
+    // und drawRawLogo() dreht jedes Wort nach dem Lesen. Rot ist also 00 F8.
+    const gross = $("folge").value === "be";
+    const roh = new Uint8Array(ZIEL * ZIEL * 2);
+    for (let i = 0, j = 0; i < bd.length; i += 4, j += 2) {
+      const w = ((bd[i] & 0xF8) << 8) | ((bd[i + 1] & 0xFC) << 3) | (bd[i + 2] >> 3);
+      roh[j]     = gross ? (w >> 8) : (w & 0xFF);
+      roh[j + 1] = gross ? (w & 0xFF) : (w >> 8);
+    }
+
+    const name = hex8(fnv1a(u)) + ".565";
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([roh], { type: "application/octet-stream" }));
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+
+    $("status").innerHTML = '<span class="ok">' + L.fertig(name, roh.length) + "</span>";
+  });
+
+  $("de").addEventListener("click", () => spracheSetzen("de"));
+  $("en").addEventListener("click", () => spracheSetzen("en"));
+
+  const gespeichert = (() => { try { return localStorage.getItem("logo565-sprache"); } catch (e) { return null; } })();
+  spracheSetzen(gespeichert || ((navigator.language || "").toLowerCase().startsWith("de") ? "de" : "en"));
+  buehneZeichnen();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+/*
+    AudioFileSourceBuffer
+    Double-buffered input file using system RAM
+
+    Copyright (C) 2017  Earle F. Philhower, III
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#ifndef _AUDIOFILESOURCEBUFFER_H
+#define _AUDIOFILESOURCEBUFFER_H
+
+#include "AudioFileSource.h"
+
+
+class AudioFileSourceBuffer : public AudioFileSource {
+public:
+    AudioFileSourceBuffer(AudioFileSource *in, uint32_t bufferBytes);
+    AudioFileSourceBuffer(AudioFileSource *in, void *buffer, uint32_t bufferBytes); // Pre-allocated buffer by app
+    virtual ~AudioFileSourceBuffer() override;
+
+    virtual uint32_t read(void *data, uint32_t len) override;
+    virtual bool seek(int32_t pos, int dir) override;
+    virtual bool close() override;
+    virtual bool isOpen() override;
+    virtual uint32_t getSize() override;
+    virtual uint32_t getPos() override;
+    virtual bool loop() override;
+
+    virtual uint32_t getFillLevel();
+
+    // -----------------------------------------------------------------
+    // Patch 19.8.2026 (Cardputer-WebRadio): Vorfuellen, bevor der Decoder
+    // das erste Byte zieht.
+    //
+    // Ohne das faengt der Ton bei fast leerem Ring an: read() fuellt beim
+    // ersten Zugriff zwar "vollstaendig", aber nur mit dem, was der Sender
+    // in seiner Lesefrist hergibt. Bei einem knappen Sender sind das ein
+    // paar Prozent, und jeder Unterlauf wirft den Ring wieder ganz weg
+    // (length = 0, filled = false). Am Geraet gemessen: Start bei 21 %,
+    // dann 0 % - hoerbar als Stottern, bis der Vorrat ueber rund 28 %
+    // gestiegen war.
+    //
+    // preFill() dreht das um: erst sammeln, dann spielen. Rueckgabe ist der
+    // erreichte Fuellstand in Bytes.
+    uint32_t preFill(uint32_t ziel, uint32_t fristMs);
+
+    // -----------------------------------------------------------------
+    // Notausstieg, 19.8.2026 (Cardputer-WebRadio).
+    //
+    // Wer das setzt, bekommt beim naechsten read() 0 Bytes. Der Generator
+    // beendet sich daraufhin von selbst (MAD_FLOW_STOP in
+    // AudioGeneratorMP3.cpp:144), loop() kehrt zurueck, und der Aufrufer
+    // kann aufraeumen.
+    //
+    // Gebraucht fuer Stroeme, die der Decoder nicht versteht: er sucht dann
+    // innerhalb EINES loop()-Aufrufs endlos nach einem gueltigen Rahmen und
+    // laesst dabei immer wieder nachfuellen. Am 19.8.2026 mit Radio SRF 3
+    // erlebt (AAC-Strom im MP3-Decoder): das Geraet war nicht mehr
+    // bedienbar und kam allein nicht heraus.
+    //
+    // volatile, weil es aus dem Statusrueckruf gesetzt wird, waehrend read()
+    // in derselben Aufrufkette darauf wartet.
+    volatile bool abortNow;
+
+    enum { STATUS_FILLING = 2, STATUS_UNDERFLOW };
+
+private:
+    virtual void fill();
+
+private:
+    AudioFileSource *src;
+    uint32_t buffSize;
+    uint8_t *buffer;
+    bool deallocateBuffer;
+    uint32_t writePtr;
+    uint32_t readPtr;
+    uint32_t length;
+    bool filled;
+};
+
+
+#endif
+
